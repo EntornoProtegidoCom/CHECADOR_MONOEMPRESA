@@ -1,0 +1,124 @@
+@page
+@model ChecadorWeb.Pages.Equipos.IndexModel
+@{
+    ViewData["Title"] = "Equipos vinculados";
+    var puedeEditar = Model.Puede(Permisos.EquiposEditar);
+    var volver = Request.QueryString.Value;
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Equipos vinculados</h1>
+        <p class="subtitulo">Estaciones autorizadas para registrar asistencia sin PIN (DD_EQUIPO_VINCULO)</p>
+    </div>
+    @if (puedeEditar)
+    {
+        <a class="btn btn-primary" asp-page="./Vincular">Vincular equipo</a>
+    }
+</div>
+
+<partial name="_Mensaje" model="Model.Mensaje" />
+
+@if (Model.ErrorConflictos is not null)
+{
+    <div class="alert alert-warning" role="alert">@Model.ErrorConflictos</div>
+}
+else if (Model.Conflictos is { Count: > 0 } conflictos)
+{
+    <section class="tarjeta border-warning mb-3" aria-labelledby="tituloConflictos">
+        <h2 class="h6 text-uppercase text-warning mb-2" id="tituloConflictos">Conflictos detectados (@conflictos.Count)</h2>
+        <ul class="list-unstyled mb-0">
+            @foreach (var c in conflictos)
+            {
+                <li class="py-1 border-bottom">
+                    <span class="badge @(c.Critico ? "bg-danger" : "bg-warning text-dark") me-1">@(c.Critico ? "Crítico" : "Revisar")</span>
+                    <strong>@c.NbEquipo</strong>: @c.Descripcion
+                </li>
+            }
+        </ul>
+    </section>
+}
+
+<form method="get" class="tarjeta filtros mb-3" role="search" aria-label="Filtrar vínculos">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label" for="Texto">Buscar</label>
+            <input class="form-control" id="Texto" name="Texto" value="@Model.Filtro.Texto" placeholder="Equipo, ID o nombre del empleado" maxlength="100" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="Estado">Estado</label>
+            <select class="form-select" id="Estado" name="Estado" data-autoenviar>
+                <option value="activos" selected="@(Model.Filtro.Estado == "activos")">Activos</option>
+                <option value="inactivos" selected="@(Model.Filtro.Estado == "inactivos")">Históricos (inactivos)</option>
+                <option value="todos" selected="@(Model.Filtro.Estado == "todos")">Todos</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary flex-fill" data-texto-cargando="Buscando…">Buscar</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else if (Model.Resultado is { } r)
+{
+    <div class="tarjeta p-0 p-md-2">
+        @if (r.Total == 0)
+        {
+            <partial name="_EstadoVacio" model="@("No hay vínculos que coincidan con los filtros.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Vínculos de equipos</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Equipo</th>
+                            <th scope="col">Empleado</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Último heartbeat</th>
+                            <th scope="col">Alta</th>
+                            <th scope="col">Modificación</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in r.Elementos)
+                        {
+                            <tr>
+                                <td data-label="Equipo"><strong>@v.NbEquipo</strong></td>
+                                <td data-label="Empleado">
+                                    @v.IdTrabajador · @v.NombreTrabajador
+                                    @if (v.TrabajadorActivo != true) { <span class="badge bg-secondary ms-1">Empleado inactivo</span> }
+                                </td>
+                                <td data-label="Estado">
+                                    @if (v.Activo) { <span class="badge bg-success badge-estado">Activo</span> }
+                                    else { <span class="badge bg-light text-dark border badge-estado">Inactivo</span> }
+                                </td>
+                                <td data-label="Último heartbeat" class="small">@(v.UltimoHeartbeat?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</td>
+                                <td data-label="Alta" class="small text-muted">@v.Creado.ToString("dd/MM/yyyy HH:mm") @v.CreadoPor</td>
+                                <td data-label="Modificación" class="small text-muted">@v.Actualizado.ToString("dd/MM/yyyy HH:mm") @v.ActualizadoPor</td>
+                                <td class="celda-acciones">
+                                    @if (puedeEditar && v.Activo)
+                                    {
+                                        <form method="post" asp-page-handler="Desvincular" asp-route-id="@v.Id" class="d-inline"
+                                              data-confirmar="¿Desvincular el equipo @v.NbEquipo del empleado @v.IdTrabajador? La estación dejará de aceptar marcajes sin PIN para ese empleado."
+                                              data-confirmar-boton="Desvincular" data-confirmar-clase="btn-danger">
+                                            <input type="hidden" name="volver" value="@volver" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Desvincular</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <partial name="_Paginador" model="Model.Paginador" />
+}

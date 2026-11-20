@@ -1,0 +1,56 @@
+@page
+@model ChecadorWeb.Pages.Account.MiCuentaModel
+@{
+    ViewData["Title"] = "Mi cuenta";
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Mi cuenta</h1>
+        <p class="subtitulo">Datos de acceso al sitio administrativo</p>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="tarjeta">
+            <h2 class="h6 text-muted text-uppercase">Usuario</h2>
+            @if (Model.Usuario is not null)
+            {
+                <dl class="row mb-0">
+                    <dt class="col-5">Usuario</dt><dd class="col-7">@Model.Usuario.Id</dd>
+                    <dt class="col-5">Nombre</dt><dd class="col-7">@Model.Usuario.NombreCompleto</dd>
+                    <dt class="col-5">Correo</dt><dd class="col-7">@(Model.Usuario.Email ?? "—")</dd>
+                    <dt class="col-5">Perfil</dt><dd class="col-7">@Model.NombrePerfil</dd>
+                </dl>
+            }
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="tarjeta">
+            <h2 class="h6 text-muted text-uppercase">Cambiar contraseña</h2>
+            <form method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+                <div class="mb-3">
+                    <label asp-for="Datos.Actual" class="form-label"></label>
+                    <input asp-for="Datos.Actual" class="form-control" autocomplete="current-password" maxlength="50" />
+                    <span asp-validation-for="Datos.Actual" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Datos.Nueva" class="form-label"></label>
+                    <input asp-for="Datos.Nueva" class="form-control" autocomplete="new-password" maxlength="50" aria-describedby="ayudaPassword" />
+                    <div id="ayudaPassword" class="form-text">Entre 8 y 50 caracteres, con letras y números.</div>
+                    <span asp-validation-for="Datos.Nueva" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Datos.Confirmar" class="form-label"></label>
+                    <input asp-for="Datos.Confirmar" class="form-control" autocomplete="new-password" maxlength="50" />
+                    <span asp-validation-for="Datos.Confirmar" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+                <p class="form-text mt-2 mb-0">Al cambiarla se cerrará su sesión.</p>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

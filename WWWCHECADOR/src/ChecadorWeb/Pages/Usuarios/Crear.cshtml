@@ -1,0 +1,54 @@
+@page
+@model ChecadorWeb.Pages.Usuarios.CrearModel
+@{
+    ViewData["Title"] = "Nuevo usuario";
+    ViewData["Perfiles"] = Model.Perfiles;
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Nuevo usuario del sistema</h1>
+        <p class="subtitulo">El acceso al sitio depende de los permisos configurados para el perfil.</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="./Index">Volver</a>
+</div>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+<form method="post" novalidate data-texto-cargando="Guardando…">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    <section class="tarjeta">
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label asp-for="Datos.IdUsuario" class="form-label"></label>
+                <input asp-for="Datos.IdUsuario" class="form-control" maxlength="25" autocomplete="off" />
+                <span asp-validation-for="Datos.IdUsuario" class="text-danger small"></span>
+            </div>
+        </div>
+        <partial name="_CamposUsuario" for="Datos" />
+    </section>
+    <section class="tarjeta">
+        <h2 class="h6 text-muted text-uppercase mb-3">Contraseña inicial</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Datos.Password" class="form-label"></label>
+                <input asp-for="Datos.Password" class="form-control" maxlength="50" autocomplete="new-password" aria-describedby="ayudaPwd" />
+                <span asp-validation-for="Datos.Password" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.ConfirmarPassword" class="form-label"></label>
+                <input asp-for="Datos.ConfirmarPassword" class="form-control" maxlength="50" autocomplete="new-password" />
+                <span asp-validation-for="Datos.ConfirmarPassword" class="text-danger small"></span>
+            </div>
+        </div>
+        <p id="ayudaPwd" class="form-text mt-2 mb-0">Entre 8 y 50 caracteres, con letras y números. Se almacena con el formato vigente del sistema.</p>
+    </section>
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Crear usuario</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">Cancelar</a>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

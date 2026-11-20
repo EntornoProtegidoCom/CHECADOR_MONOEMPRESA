@@ -1,0 +1,37 @@
+@page
+@model ChecadorWeb.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+<div class="login-caja">
+    <div class="text-center mb-4">
+        <div class="marca fs-3">Checador</div>
+        <p class="text-muted mb-0">Administración del sistema de asistencia</p>
+    </div>
+    <div class="tarjeta p-4 shadow-sm">
+        <h1 class="h5 mb-3">Iniciar sesión</h1>
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@Model.Error</div>
+        }
+        <form method="post" novalidate data-texto-cargando="Validando…">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+            <div class="mb-3">
+                <label asp-for="Datos.Usuario" class="form-label"></label>
+                <input asp-for="Datos.Usuario" class="form-control" autocomplete="username" autofocus maxlength="25" />
+                <span asp-validation-for="Datos.Usuario" class="text-danger small"></span>
+            </div>
+            <div class="mb-4">
+                <label asp-for="Datos.Password" class="form-label"></label>
+                <input asp-for="Datos.Password" class="form-control" autocomplete="current-password" maxlength="50" />
+                <span asp-validation-for="Datos.Password" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100" data-texto-cargando="Validando…">Entrar</button>
+        </form>
+    </div>
+    <p class="text-center text-muted small mt-3">Acceso exclusivo para personal autorizado. Las operaciones quedan registradas.</p>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

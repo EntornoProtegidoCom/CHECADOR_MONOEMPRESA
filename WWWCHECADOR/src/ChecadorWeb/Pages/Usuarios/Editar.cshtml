@@ -1,0 +1,41 @@
+@page "{id}"
+@model ChecadorWeb.Pages.Usuarios.EditarModel
+@{
+    ViewData["Title"] = "Editar usuario";
+    ViewData["Perfiles"] = Model.Perfiles;
+    ViewData["BloquearPerfil"] = Model.EsUsuarioActual;
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Editar usuario @Model.Id</h1>
+        <p class="subtitulo">El identificador no se puede modificar.</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (!Model.EsUsuarioActual)
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Password" asp-route-id="@Model.Id">Restablecer contraseña</a>
+        }
+        <a class="btn btn-outline-secondary" asp-page="./Index">Volver</a>
+    </div>
+</div>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else
+{
+    <form method="post" novalidate data-texto-cargando="Guardando…">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        <section class="tarjeta">
+            <partial name="_CamposUsuario" for="Datos" />
+        </section>
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Cancelar</a>
+        </div>
+    </form>
+}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

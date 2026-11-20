@@ -1,0 +1,41 @@
+@model PaginadorVista
+@{
+    var inicio = Math.Max(1, Model.Pagina - 2);
+    var fin = Math.Min(Model.TotalPaginas, Model.Pagina + 2);
+    var pagina = ViewContext.RouteData.Values["page"]?.ToString();
+}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+    <p class="text-muted small mb-0" aria-live="polite">
+        @if (Model.Total == 0) { <text>Sin resultados</text> }
+        else { <text>Mostrando @Model.Desde–@Model.Hasta de @Model.Total.ToString("N0")</text> }
+    </p>
+    @if (Model.TotalPaginas > 1)
+    {
+        <nav aria-label="Paginación">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(Model.Pagina <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-page="@pagina" asp-all-route-data="Model.Ruta(Model.Pagina - 1)" aria-label="Página anterior">&laquo;</a>
+                </li>
+                @if (inicio > 1)
+                {
+                    <li class="page-item"><a class="page-link" asp-page="@pagina" asp-all-route-data="Model.Ruta(1)">1</a></li>
+                    @if (inicio > 2) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+                }
+                @for (var i = inicio; i <= fin; i++)
+                {
+                    <li class="page-item @(i == Model.Pagina ? "active" : "")">
+                        <a class="page-link" asp-page="@pagina" asp-all-route-data="Model.Ruta(i)" aria-current="@(i == Model.Pagina ? "page" : null)">@i</a>
+                    </li>
+                }
+                @if (fin < Model.TotalPaginas)
+                {
+                    @if (fin < Model.TotalPaginas - 1) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+                    <li class="page-item"><a class="page-link" asp-page="@pagina" asp-all-route-data="Model.Ruta(Model.TotalPaginas)">@Model.TotalPaginas</a></li>
+                }
+                <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : "")">
+                    <a class="page-link" asp-page="@pagina" asp-all-route-data="Model.Ruta(Model.Pagina + 1)" aria-label="Página siguiente">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

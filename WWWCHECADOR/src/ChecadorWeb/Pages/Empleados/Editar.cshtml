@@ -1,0 +1,71 @@
+@page "{id:int}"
+@model ChecadorWeb.Pages.Empleados.EditarModel
+@{
+    ViewData["Title"] = "Editar empleado";
+    var id = RouteData.Values["id"];
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Editar empleado @id</h1>
+        @if (Model.Resumen is { } r)
+        {
+            <p class="subtitulo">
+                @r.NombreCompleto · @r.VinculosActivos equipo(s) vinculado(s)
+                @if (r.Actualizado is { } f) { <text>· Última modificación @f.ToString("dd/MM/yyyy HH:mm") por @(r.ActualizadoPor ?? "—")</text> }
+            </p>
+        }
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.Puede(Permisos.HorariosEditar))
+        {
+            <a class="btn btn-outline-primary" asp-page="/Horarios/Editar" asp-route-id="@id">Editar horario</a>
+        }
+        <a class="btn btn-outline-secondary" asp-page="./Index">Volver</a>
+    </div>
+</div>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else
+{
+    <form method="post" novalidate data-texto-cargando="Guardando…">
+        <input type="hidden" asp-for="Datos.Sello" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <section class="tarjeta" aria-labelledby="secDatos">
+            <h2 class="h6 text-muted text-uppercase mb-3" id="secDatos">Datos generales</h2>
+            <partial name="_CamposEmpleado" for="Datos" />
+            @if (Model.Resumen is { VinculosActivos: > 0 } res)
+            {
+                <p class="form-text mb-0 mt-2">Para desactivar al empleado primero desvincule sus @res.VinculosActivos equipo(s).</p>
+            }
+        </section>
+
+        <section class="tarjeta" aria-labelledby="secPin">
+            <h2 class="h6 text-muted text-uppercase mb-3" id="secPin">Cambiar PIN</h2>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <label asp-for="Datos.NuevoPin" class="form-label"></label>
+                    <input asp-for="Datos.NuevoPin" class="form-control" inputmode="numeric" maxlength="4" autocomplete="new-password" value="" />
+                    <span asp-validation-for="Datos.NuevoPin" class="text-danger small"></span>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label asp-for="Datos.ConfirmarNuevoPin" class="form-label"></label>
+                    <input asp-for="Datos.ConfirmarNuevoPin" class="form-control" inputmode="numeric" maxlength="4" autocomplete="new-password" value="" />
+                    <span asp-validation-for="Datos.ConfirmarNuevoPin" class="text-danger small"></span>
+                </div>
+            </div>
+            <p class="form-text mt-2 mb-0">El PIN actual nunca se muestra. Deje vacío para conservarlo.</p>
+        </section>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Cancelar</a>
+        </div>
+    </form>
+}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

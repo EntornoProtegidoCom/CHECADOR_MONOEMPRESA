@@ -1,0 +1,100 @@
+@page
+@model ChecadorWeb.Pages.Horarios.IndexModel
+@{
+    ViewData["Title"] = "Horarios";
+    var puedeEditar = Model.Puede(Permisos.HorariosEditar);
+    static string H(TimeOnly? t) => t?.ToString("HH:mm") ?? "—";
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Horarios</h1>
+        <p class="subtitulo">Horario laboral asignado a cada empleado (no son marcajes)</p>
+    </div>
+</div>
+
+<partial name="_Mensaje" model="Model.Mensaje" />
+
+<form method="get" class="tarjeta filtros mb-3" role="search" aria-label="Filtrar horarios">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label" for="Texto">Buscar</label>
+            <input class="form-control" id="Texto" name="Texto" value="@Model.Filtro.Texto" placeholder="ID o nombre" maxlength="100" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="Estado">Estado</label>
+            <select class="form-select" id="Estado" name="Estado" data-autoenviar>
+                <option value="activos" selected="@(Model.Filtro.Estado == "activos")">Activos</option>
+                <option value="inactivos" selected="@(Model.Filtro.Estado == "inactivos")">Inactivos</option>
+                <option value="todos" selected="@(Model.Filtro.Estado == "todos")">Todos</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="SinHorario" name="SinHorario" value="true" checked="@Model.Filtro.SinHorario" data-autoenviar />
+                <label class="form-check-label" for="SinHorario">Sin horario</label>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary flex-fill" data-texto-cargando="Buscando…">Buscar</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else if (Model.Resultado is { } r)
+{
+    <div class="tarjeta p-0 p-md-2">
+        @if (r.Total == 0)
+        {
+            <partial name="_EstadoVacio" model="@("No hay empleados que coincidan con los filtros.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Horarios por empleado</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Empleado</th>
+                            <th scope="col">Entrada</th>
+                            <th scope="col">Salida a comer</th>
+                            <th scope="col">Entrada de comer</th>
+                            <th scope="col">Salida</th>
+                            <th scope="col">Modificado</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in r.Elementos)
+                        {
+                            <tr>
+                                <td data-label="ID">@e.Id</td>
+                                <td data-label="Empleado">
+                                    @e.NombreCompleto
+                                    @if (e.Activo != true) { <span class="badge bg-secondary ms-1">Inactivo</span> }
+                                </td>
+                                <td data-label="Entrada">@H(e.HoraEntrada)</td>
+                                <td data-label="Salida a comer">@H(e.HoraSalidaComida)</td>
+                                <td data-label="Entrada de comer">@H(e.HoraEntradaComida)</td>
+                                <td data-label="Salida">@H(e.HoraSalida)</td>
+                                <td data-label="Modificado" class="small text-muted">@(e.Actualizado?.ToString("dd/MM/yyyy HH:mm") ?? "—") @(e.ActualizadoPor)</td>
+                                <td class="celda-acciones">
+                                    @if (puedeEditar)
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary" asp-page="./Editar" asp-route-id="@e.Id">Editar horario</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <partial name="_Paginador" model="Model.Paginador" />
+}

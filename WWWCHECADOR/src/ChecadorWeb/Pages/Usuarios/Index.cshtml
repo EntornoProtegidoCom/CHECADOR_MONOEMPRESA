@@ -1,0 +1,117 @@
+@page
+@model ChecadorWeb.Pages.Usuarios.IndexModel
+@{
+    ViewData["Title"] = "Usuarios del sistema";
+    var puedeEditar = Model.Puede(Permisos.UsuariosEditar);
+    var volver = Request.QueryString.Value;
+    var yo = User.IdUsuario();
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Usuarios del sistema</h1>
+        <p class="subtitulo">Cuentas con acceso administrativo (SS_USUARIOS)</p>
+    </div>
+    @if (puedeEditar)
+    {
+        <a class="btn btn-primary" asp-page="./Crear">Nuevo usuario</a>
+    }
+</div>
+
+<partial name="_Mensaje" model="Model.Mensaje" />
+
+<form method="get" class="tarjeta filtros mb-3" role="search" aria-label="Filtrar usuarios">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label" for="Texto">Buscar</label>
+            <input class="form-control" id="Texto" name="Texto" value="@Model.Filtro.Texto" placeholder="Usuario, nombre o correo" maxlength="100" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="Perfil">Perfil</label>
+            <select class="form-select" id="Perfil" name="Perfil" data-autoenviar>
+                <option value="">Todos</option>
+                @foreach (var p in Model.Perfiles)
+                {
+                    <option value="@p.Id" selected="@(Model.Filtro.Perfil == p.Id)">@p.Nombre</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="Estado">Estado</label>
+            <select class="form-select" id="Estado" name="Estado" data-autoenviar>
+                <option value="vigentes" selected="@(Model.Filtro.Estado == "vigentes")">Vigentes</option>
+                <option value="inactivos" selected="@(Model.Filtro.Estado == "inactivos")">Inactivos</option>
+                <option value="todos" selected="@(Model.Filtro.Estado == "todos")">Todos</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary flex-fill" data-texto-cargando="Buscando…">Buscar</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else if (Model.Resultado is { } r)
+{
+    <div class="tarjeta p-0 p-md-2">
+        @if (r.Total == 0)
+        {
+            <partial name="_EstadoVacio" model="@("No hay usuarios que coincidan con los filtros.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Usuarios del sistema</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Usuario</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Correo</th>
+                            <th scope="col">Perfil</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in r.Elementos)
+                        {
+                            var vigente = u.Vigente == Model.ValorVigente;
+                            var esYo = string.Equals(u.Id, yo, StringComparison.OrdinalIgnoreCase);
+                            <tr>
+                                <td data-label="Usuario"><strong>@u.Id</strong> @if (esYo) { <span class="badge bg-info text-dark ms-1">Usted</span> }</td>
+                                <td data-label="Nombre">@u.NombreCompleto</td>
+                                <td data-label="Correo">@(u.Email ?? "—")</td>
+                                <td data-label="Perfil">@Model.NombrePerfil(u.Perfil)</td>
+                                <td data-label="Estado">
+                                    @if (vigente) { <span class="badge bg-success badge-estado">Vigente</span> }
+                                    else { <span class="badge bg-secondary badge-estado">Inactivo (@(u.Vigente ?? "sin valor"))</span> }
+                                </td>
+                                <td class="celda-acciones">
+                                    @if (puedeEditar)
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary" asp-page="./Editar" asp-route-id="@u.Id">Editar</a>
+                                        @if (!esYo)
+                                        {
+                                            <a class="btn btn-sm btn-outline-secondary" asp-page="./Password" asp-route-id="@u.Id">Contraseña</a>
+                                            <form method="post" asp-page-handler="Estado" asp-route-id="@u.Id" asp-route-activar="@(!vigente)" class="d-inline"
+                                                  data-confirmar="@(vigente ? $"¿Desactivar al usuario {u.Id}? Perderá el acceso de inmediato." : $"¿Reactivar al usuario {u.Id}?")"
+                                                  data-confirmar-boton="@(vigente ? "Desactivar" : "Activar")" data-confirmar-clase="@(vigente ? "btn-danger" : "btn-primary")">
+                                                <input type="hidden" name="volver" value="@volver" />
+                                                <button type="submit" class="btn btn-sm @(vigente ? "btn-outline-danger" : "btn-outline-success")">@(vigente ? "Desactivar" : "Activar")</button>
+                                            </form>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <partial name="_Paginador" model="Model.Paginador" />
+}

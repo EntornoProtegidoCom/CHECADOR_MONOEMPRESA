@@ -1,0 +1,115 @@
+@page
+@model ChecadorWeb.Pages.Marcajes.IndexModel
+@{
+    ViewData["Title"] = "Marcajes";
+    var verFoto = Model.Puede(Permisos.MarcajesFoto);
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Marcajes</h1>
+        <p class="subtitulo">Registros de asistencia (MM_HORARIO) · consulta de solo lectura</p>
+    </div>
+    @if (Model.Resultado is not null)
+    {
+        <a class="btn btn-outline-primary" asp-page-handler="Excel"
+           asp-route-Desde="@Model.Filtro.Desde?.ToString("yyyy-MM-dd")"
+           asp-route-Hasta="@Model.Filtro.Hasta?.ToString("yyyy-MM-dd")"
+           asp-route-Trabajador="@Model.Filtro.Trabajador"
+           asp-route-Tipo="@Model.Filtro.Tipo"
+           asp-route-Equipo="@Model.Filtro.Equipo"
+           title="Descargar todos los marcajes de la consulta, de todas las páginas">Descargar Excel</a>
+    }
+</div>
+
+<form method="get" class="tarjeta filtros mb-3" role="search" aria-label="Filtrar marcajes">
+    <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="Desde">Desde</label>
+            <input class="form-control" type="date" id="Desde" name="Desde" value="@Model.Filtro.Desde?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="Hasta">Hasta</label>
+            <input class="form-control" type="date" id="Hasta" name="Hasta" value="@Model.Filtro.Hasta?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Trabajador">Empleado</label>
+            <input class="form-control" id="Trabajador" name="Trabajador" value="@Model.Filtro.Trabajador" placeholder="ID o nombre" maxlength="100" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="Tipo">Tipo</label>
+            <select class="form-select" id="Tipo" name="Tipo">
+                <option value="">Todos</option>
+                @foreach (var (tipo, nombre) in TiposRegistro.Nombres)
+                {
+                    <option value="@tipo" selected="@(Model.Filtro.Tipo == tipo)">@nombre</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="Equipo">Equipo</label>
+            <input class="form-control" id="Equipo" name="Equipo" value="@Model.Filtro.Equipo" maxlength="50" />
+        </div>
+        <div class="col-12 d-flex gap-2 justify-content-end">
+            <button type="submit" class="btn btn-outline-primary" data-texto-cargando="Consultando…">Consultar</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Limpiar</a>
+        </div>
+    </div>
+    <p class="form-text mb-0 mt-2">Rango máximo: @MarcajeService.DiasMaximosConsulta días. Por defecto se muestran los últimos 7 días.</p>
+</form>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else if (Model.Resultado is { } r)
+{
+    <div class="tarjeta p-0 p-md-2">
+        @if (r.Total == 0)
+        {
+            <partial name="_EstadoVacio" model="@("No hay marcajes en el periodo y filtros seleccionados.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Marcajes registrados</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">IdTrabajador</th>
+                            <th scope="col">Empleado</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Hora</th>
+                            <th scope="col">Tipo</th>                            
+                            <th scope="col">Equipo</th>
+                            <th scope="col">Correo</th>
+                            <th scope="col">Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in r.Elementos)
+                        {
+                            <tr>
+                                 <td data-label="IdTrabajador">@m.IdTrabajador</td>
+                                <td data-label="Empleado">@m.NombreTrabajador</td>
+                                <td data-label="Fecha">@m.Hora.ToString("dd/MM/yyyy")</td>
+                                <td data-label="Hora">@m.Hora.ToString("HH:mm:ss")</td>
+                                <td data-label="Tipo">@m.TipoNombre</td>
+                                <td data-label="Equipo">@(m.Equipo ?? "—")</td>
+                                <td data-label="Correo" class="small">
+                                    @if (m.Enviado == true) { <span class="badge bg-success">Enviado</span> }
+                                    else { <span class="badge bg-light text-dark border">Pendiente (@(m.Intentos ?? 0) intentos)</span> }
+                                </td>
+                                <td data-label="Foto">
+                                    @if (!m.TieneFoto) { <span class="text-muted">—</span> }
+                                    else if (verFoto) { <a asp-page-handler="Foto" asp-route-id="@m.Id" target="_blank" rel="noopener">Ver foto</a> }
+                                    else { <span class="text-muted small">Con foto</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <partial name="_Paginador" model="Model.Paginador" />
+}

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChecadorWeb/ChecadorWeb.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChecadorWeb.Tests/ChecadorWeb.Tests.csproj" />
+  </Folder>
+</Solution>

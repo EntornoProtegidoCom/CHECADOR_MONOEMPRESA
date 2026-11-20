@@ -1,0 +1,147 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Panel";
+    var r = Model.Resultado;
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Panel operativo</h1>
+        <p class="subtitulo">
+            @if (r.ActualizadoServidor is { } fecha)
+            {
+                <text>Datos al @fecha.ToString("dd/MM/yyyy HH:mm:ss") (hora del servidor de base de datos)</text>
+            }
+            else
+            {
+                <text>Consulta realizada @r.ActualizadoLocal.ToString("dd/MM/yyyy HH:mm:ss"); no se obtuvo la hora del servidor de base de datos.</text>
+            }
+        </p>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" asp-page="/Index">Actualizar</a>
+</div>
+
+<div class="row g-3">
+    @if (r.Empleados is { } emp)
+    {
+        <div class="col-sm-6 col-xl-3">
+            <section class="tarjeta kpi" aria-labelledby="kpiEmpleados">
+                <div class="kpi-titulo" id="kpiEmpleados">Empleados activos</div>
+                @if (emp.Datos is { } d)
+                {
+                    <div class="kpi-valor">@d.Activos.ToString("N0")</div>
+                    <div class="kpi-detalle">@d.Inactivos.ToString("N0") inactivos</div>
+                    @if (d.SinHorario > 0)
+                    {
+                        <div class="kpi-detalle text-warning"><a asp-page="/Horarios/Index" asp-route-SinHorario="true">@d.SinHorario activos sin horario completo</a></div>
+                    }
+                    <a class="small" asp-page="/Empleados/Index">Ver empleados →</a>
+                }
+                else
+                {
+                    <p class="text-danger small mb-0" role="alert">@emp.Error</p>
+                }
+            </section>
+        </div>
+    }
+
+    @if (r.Estaciones is { } est)
+    {
+        <div class="col-sm-6 col-xl-3">
+            <section class="tarjeta kpi" aria-labelledby="kpiEstaciones">
+                <div class="kpi-titulo" id="kpiEstaciones">Estaciones</div>
+                @if (est.Datos is { } d)
+                {
+                    var sinCom = d.Contar(EstadoComunicacion.SinComunicacion);
+                    var aviso = d.Contar(EstadoComunicacion.Aviso);
+                    <div class="kpi-valor">@d.Contar(EstadoComunicacion.EnLinea) <span class="fs-6 fw-normal text-muted">en línea</span></div>
+                    <div class="kpi-detalle">
+                        <span class="badge bg-danger badge-estado">@sinCom sin comunicación</span>
+                        <span class="badge bg-warning text-dark badge-estado">@aviso con aviso</span>
+                        <span class="badge bg-secondary badge-estado">@d.Contar(EstadoComunicacion.NuncaReporto) nunca reportaron</span>
+                    </div>
+                    <a class="small" asp-page="/Estaciones/Index">Ver estaciones →</a>
+                }
+                else
+                {
+                    <p class="text-danger small mb-0" role="alert">@est.Error No se asume ninguna estación desconectada.</p>
+                }
+            </section>
+        </div>
+    }
+
+    @if (r.Equipos is { } eq)
+    {
+        <div class="col-sm-6 col-xl-3">
+            <section class="tarjeta kpi" aria-labelledby="kpiEquipos">
+                <div class="kpi-titulo" id="kpiEquipos">Equipos vinculados</div>
+                @if (eq.Datos is { } d)
+                {
+                    <div class="kpi-valor">@d.VinculosActivos.ToString("N0")</div>
+                    @if (d.Conflictos == 0)
+                    {
+                        <div class="kpi-detalle">Sin conflictos detectados</div>
+                    }
+                    else
+                    {
+                        <div class="kpi-detalle"><span class="badge bg-@(d.ConflictosCriticos > 0 ? "danger" : "warning text-dark")">@d.Conflictos conflicto(s)</span></div>
+                    }
+                    <a class="small" asp-page="/Equipos/Index">Ver vínculos →</a>
+                }
+                else
+                {
+                    <p class="text-danger small mb-0" role="alert">@eq.Error</p>
+                }
+            </section>
+        </div>
+    }
+
+    @if (r.Usuarios is { } us)
+    {
+        <div class="col-sm-6 col-xl-3">
+            <section class="tarjeta kpi" aria-labelledby="kpiUsuarios">
+                <div class="kpi-titulo" id="kpiUsuarios">Usuarios del sistema</div>
+                @if (us.Datos is { } d)
+                {
+                    <div class="kpi-valor">@d.Vigentes.ToString("N0")</div>
+                    <div class="kpi-detalle">vigentes · @d.Inactivos inactivos</div>
+                    <a class="small" asp-page="/Usuarios/Index">Ver usuarios →</a>
+                }
+                else
+                {
+                    <p class="text-danger small mb-0" role="alert">@us.Error</p>
+                }
+            </section>
+        </div>
+    }
+</div>
+
+@if (r.Marcajes is { } mar)
+{
+    <section class="tarjeta mt-3" aria-labelledby="tituloMarcajes">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            <h2 class="h6 text-muted text-uppercase mb-3" id="tituloMarcajes">Marcajes del día</h2>
+            <a class="small" asp-page="/Marcajes/Index">Consultar marcajes →</a>
+        </div>
+        @if (mar.Datos is { } d)
+        {
+            <div class="row g-3 text-center">
+                @foreach (var (tipo, nombre) in TiposRegistro.Nombres)
+                {
+                    <div class="col-6 col-md-3">
+                        <div class="kpi-valor">@(d.PorTipo.TryGetValue(tipo, out var n) ? n : 0)</div>
+                        <div class="kpi-detalle">@nombre</div>
+                    </div>
+                }
+            </div>
+            <p class="kpi-detalle mt-3 mb-0">
+                @d.TrabajadoresConEntrada trabajador(es) con entrada registrada el @d.Fecha.ToString("dd/MM/yyyy").
+                Notificaciones por correo pendientes: @d.CorreosPendientes.
+            </p>
+        }
+        else
+        {
+            <p class="text-danger small mb-0" role="alert">@mar.Error</p>
+        }
+    </section>
+}

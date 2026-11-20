@@ -1,0 +1,204 @@
+@page
+@model ChecadorWeb.Pages.DiasFestivos.IndexModel
+@{
+    ViewData["Title"] = "Días Festivos";
+    var puedeEditar = Model.Puede(Permisos.DiasFestivosEditar);
+    var modoEdicion  = Model.Captura.Id > 0;
+}
+
+<div class="encabezado-pagina">
+    <div>
+        <h1>Días Festivos</h1>
+        <p class="subtitulo">Catálogo de festivos oficiales e internos (DIA_FESTIVO)</p>
+    </div>
+</div>
+
+<partial name="_Mensaje" model="Model.Mensaje" />
+
+@* ── Formulario de Alta / Edición ──────────────────────────────────────────── *@
+@if (puedeEditar)
+{
+    <div class="tarjeta mb-4">
+        <h2 class="fs-5 mb-3">@(modoEdicion ? "Editar día festivo" : "Registrar nuevo día festivo")</h2>
+
+        <form method="post" asp-page-handler="Save" novalidate>
+            <input type="hidden" asp-for="Captura.Id" />
+            <input type="hidden" asp-for="MostrarTodos" />
+
+            <div class="row g-3">
+
+                <div class="col-md-3">
+                    <label class="form-label" asp-for="Captura.Fecha">Fecha</label>
+                    <input class="form-control" type="date" asp-for="Captura.Fecha"
+                           placeholder="dd/mm/aaaa" required />
+                    <span class="text-danger small" asp-validation-for="Captura.Fecha"></span>
+                </div>
+
+                <div class="col-md-5">
+                    <label class="form-label" asp-for="Captura.Descripcion">Concepto / descripción</label>
+                    <input class="form-control" asp-for="Captura.Descripcion"
+                           placeholder="Ej. Año Nuevo, Día del Trabajo…" maxlength="150" required />
+                    <span class="text-danger small" asp-validation-for="Captura.Descripcion"></span>
+                </div>
+
+                <div class="col-md-2 d-flex flex-column justify-content-end">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               asp-for="Captura.EsOficial" id="switchOficial" />
+                        <label class="form-check-label" for="switchOficial">
+                            Oficial (Ley Federal del Trabajo)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill"
+                            data-texto-cargando="Guardando…">
+                        @(modoEdicion ? "Actualizar" : "Guardar")
+                    </button>
+                    @if (modoEdicion)
+                    {
+                        <a class="btn btn-outline-secondary" asp-page="./Index"
+                           asp-route-MostrarTodos="@Model.MostrarTodos">Cancelar</a>
+                    }
+                </div>
+
+            </div>
+        </form>
+    </div>
+}
+
+@* ── Filtro: mostrar todos / solo activos ─────────────────────────────────── *@
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <p class="mb-0 text-muted small">
+        @(Model.MostrarTodos ? "Mostrando todos los registros (activos e inactivos)." : "Mostrando solo días festivos activos.")
+    </p>
+    <form method="get" class="m-0">
+        <input type="hidden" name="MostrarTodos" value="@(!Model.MostrarTodos)" />
+        <button type="submit" class="btn btn-sm btn-outline-secondary">
+            @(Model.MostrarTodos ? "Ver solo activos" : "Ver todos")
+        </button>
+    </form>
+</div>
+
+@* ── Tabla de días festivos ───────────────────────────────────────────────── *@
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else
+{
+    <div class="tarjeta p-0 p-md-2">
+        @if (Model.Festivos.Count == 0)
+        {
+            <partial name="_EstadoVacio"
+                     model="@(Model.MostrarTodos ? "No hay días festivos registrados." : "No hay días festivos activos. Active \"Ver todos\" para consultar los inactivos.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Catálogo de días festivos</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Concepto</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Estatus</th>
+                            <th scope="col">Última modificación</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model.Festivos)
+                        {
+                            <tr class="@(!f.Estatus ? "table-secondary text-muted" : "")">
+                                <td data-label="Fecha">
+                                    <strong>@f.Fecha.ToString("dd/MM/yyyy")</strong>
+                                    <div class="text-muted small">@f.Fecha.ToString("dddd", new System.Globalization.CultureInfo("es-MX"))</div>
+                                </td>
+                                <td data-label="Concepto">@f.Descripcion</td>
+                                <td data-label="Tipo">
+                                    @if (f.EsOficial)
+                                    {
+                                        <span class="badge bg-primary">Oficial (Ley)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info text-dark">Interno (Empresa)</span>
+                                    }
+                                </td>
+                                <td data-label="Estatus">
+                                    @if (f.Estatus)
+                                    {
+                                        <span class="badge bg-success badge-estado">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary badge-estado">Inactivo</span>
+                                    }
+                                </td>
+                                <td data-label="Última modificación">
+                                    @if (f.UpdateTime.HasValue)
+                                    {
+                                        <span class="small">@f.UpdateTime.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                        <div class="text-muted small">@(f.UpdateUsuario ?? "—")</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                                <td class="celda-acciones">
+                                    @if (puedeEditar)
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary"
+                                           asp-page="./Index"
+                                           asp-route-editar="@f.Id"
+                                           asp-route-MostrarTodos="@Model.MostrarTodos">Editar</a>
+
+                                        @if (f.Estatus)
+                                        {
+                                            <form method="post" asp-page-handler="Toggle"
+                                                  asp-route-id="@f.Id" asp-route-activar="false"
+                                                  asp-route-MostrarTodos="@Model.MostrarTodos"
+                                                  class="d-inline"
+                                                  data-confirmar="¿Desactivar el día festivo «@f.Descripcion» (@f.Fecha.ToString("dd/MM/yyyy"))? Los marcajes pasados no se ven afectados."
+                                                  data-confirmar-boton="Desactivar" data-confirmar-clase="btn-danger">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                            </form>
+
+                                            <form method="post" asp-page-handler="Delete"
+                                                  asp-route-id="@f.Id"
+                                                  asp-route-MostrarTodos="@Model.MostrarTodos"
+                                                  class="d-inline"
+                                                  data-confirmar="¿Eliminar «@f.Descripcion» (@f.Fecha.ToString("dd/MM/yyyy")) del catálogo activo? El registro quedará inactivo y el historial se preserva."
+                                                  data-confirmar-boton="Eliminar" data-confirmar-clase="btn-danger">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-page-handler="Toggle"
+                                                  asp-route-id="@f.Id" asp-route-activar="true"
+                                                  asp-route-MostrarTodos="@Model.MostrarTodos"
+                                                  class="d-inline"
+                                                  data-confirmar="¿Reactivar el día festivo «@f.Descripcion»?"
+                                                  data-confirmar-boton="Reactivar">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">Reactivar</button>
+                                            </form>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

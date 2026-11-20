@@ -1,0 +1,58 @@
+@page
+@model ChecadorWeb.Pages.Equipos.VincularModel
+@{
+    ViewData["Title"] = "Vincular equipo";
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Vincular equipo</h1>
+        <p class="subtitulo">Un equipo solo puede tener un vínculo activo (misma regla que sp_desktop_vinculo_equipo).</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="./Index">Volver</a>
+</div>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else
+{
+    <form method="post" novalidate class="tarjeta" data-texto-cargando="Vinculando…">
+        <div asp-validation-summary="ModelOnly" class="alert alert-warning" role="alert"></div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Datos.NbEquipo" class="form-label"></label>
+                <input asp-for="Datos.NbEquipo" class="form-control" maxlength="50" autocomplete="off" aria-describedby="ayudaEquipo" />
+                <div id="ayudaEquipo" class="form-text">Nombre de Windows de la estación (Environment.MachineName), p. ej. PC-RECEPCION-01.</div>
+                <span asp-validation-for="Datos.NbEquipo" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Datos.IdTrabajador" class="form-label"></label>
+                <select asp-for="Datos.IdTrabajador" class="form-select">
+                    <option value="">Seleccione un empleado activo…</option>
+                    @foreach (var e in Model.Empleados ?? [])
+                    {
+                        <option value="@e.Id" selected="@(Model.Datos.IdTrabajador == e.Id)">@e.Id · @e.NombreCompleto</option>
+                    }
+                </select>
+                <span asp-validation-for="Datos.IdTrabajador" class="text-danger small"></span>
+            </div>
+            @if (Model.RequiereConfirmacion || Model.Datos.ConfirmarMultiple)
+            {
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="Datos.ConfirmarMultiple" class="form-check-input" />
+                        <label asp-for="Datos.ConfirmarMultiple" class="form-check-label"></label>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Vincular</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Cancelar</a>
+        </div>
+    </form>
+}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

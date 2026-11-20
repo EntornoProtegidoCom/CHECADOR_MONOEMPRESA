@@ -1,0 +1,253 @@
+@page "{id:int}"
+@model ChecadorWeb.Pages.Horarios.EditarModel
+@{
+    ViewData["Title"] = "Editar horario y vacaciones";
+    ViewData["PermiteCruceMedianoche"] = Model.PermiteCruceMedianoche;
+    var id = RouteData.Values["id"];
+    var esTabVacaciones = Model.TabActiva == "vacaciones";
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Horario del empleado @id</h1>
+        @if (Model.Resumen is { } r)
+        {
+            <p class="subtitulo">@r.NombreCompleto @(r.Activo == true ? "" : "· Inactivo")</p>
+        }
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="./Index">Volver</a>
+</div>
+
+<partial name="_Mensaje" model="Model.Mensaje" />
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else
+{
+    <ul class="nav nav-tabs mb-4" id="tabsHorario" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(!esTabVacaciones ? "active" : "")" id="turno-tab" data-bs-toggle="tab" data-bs-target="#tab-turno" type="button" role="tab" aria-controls="tab-turno" aria-selected="@(!esTabVacaciones ? "true" : "false")">
+                Turno Regular
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(esTabVacaciones ? "active" : "")" id="vacaciones-tab" data-bs-toggle="tab" data-bs-target="#tab-vacaciones" type="button" role="tab" aria-controls="tab-vacaciones" aria-selected="@(esTabVacaciones ? "true" : "false")">
+                Periodos de Vacaciones
+                @if (Model.Vacaciones.Count(v => v.Estatus) > 0)
+                {
+                    <span class="badge bg-primary ms-1">@Model.Vacaciones.Count(v => v.Estatus)</span>
+                }
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="tabsHorarioContenido">
+        @* ── TAB 1: TURNO REGULAR ─────────────────────────────────────────── *@
+        <div class="tab-pane fade @(!esTabVacaciones ? "show active" : "")" id="tab-turno" role="tabpanel" aria-labelledby="turno-tab">
+            <form method="post" novalidate data-texto-cargando="Guardando…">
+                <input type="hidden" asp-for="Datos.Sello" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <section class="tarjeta">
+                    <partial name="_CamposHorario" for="Datos" />
+                </section>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">Guardar horario</button>
+                    <a class="btn btn-outline-secondary" asp-page="./Index">Cancelar</a>
+                </div>
+            </form>
+        </div>
+
+        @* ── TAB 2: PERIODOS DE VACACIONES ───────────────────────────────── *@
+        <div class="tab-pane fade @(esTabVacaciones ? "show active" : "")" id="tab-vacaciones" role="tabpanel" aria-labelledby="vacaciones-tab">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="fs-5 mb-0">Periodos Vacacionales Autorizados</h2>
+                    <p class="text-muted small mb-0">Registro y consulta de fechas de vacaciones programadas del empleado.</p>
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalVacaciones">
+                    + Registrar Vacaciones
+                </button>
+            </div>
+
+            <div class="tarjeta p-0 p-md-2">
+                @if (Model.Vacaciones.Count == 0)
+                {
+                    <partial name="_EstadoVacio" model="@("El empleado no tiene periodos de vacaciones registrados.")" />
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 tabla-responsiva">
+                            <caption class="visually-hidden">Periodos de vacaciones del trabajador</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Rango de Fechas</th>
+                                    <th scope="col">Días</th>
+                                    <th scope="col">Periodo (Año)</th>
+                                    <th scope="col">Observaciones</th>
+                                    <th scope="col">Estatus</th>
+                                    <th scope="col">Registrado / Actualizado</th>
+                                    <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var v in Model.Vacaciones)
+                                {
+                                    <tr class="@(!v.Estatus ? "table-secondary text-muted" : "")">
+                                        <td data-label="Rango de Fechas">
+                                            <strong>@v.FechaInicio.ToString("dd/MM/yyyy")</strong> al <strong>@v.FechaFin.ToString("dd/MM/yyyy")</strong>
+                                        </td>
+                                        <td data-label="Días">
+                                            <span class="badge @(v.Estatus ? "bg-info text-dark" : "bg-light text-muted")">
+                                                @v.DiasTomados @(v.DiasTomados == 1 ? "día" : "días")
+                                            </span>
+                                        </td>
+                                        <td data-label="Periodo">
+                                            @(v.PeriodoAnio?.ToString() ?? "—")
+                                        </td>
+                                        <td data-label="Observaciones">
+                                            @(string.IsNullOrWhiteSpace(v.Observaciones) ? "—" : v.Observaciones)
+                                        </td>
+                                        <td data-label="Estatus">
+                                            @if (v.Estatus)
+                                            {
+                                                <span class="badge bg-success badge-estado">Aprobada</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary badge-estado">Cancelada</span>
+                                            }
+                                        </td>
+                                        <td data-label="Registro">
+                                            <div class="small">@v.CreateTime.ToString("dd/MM/yyyy HH:mm")</div>
+                                            <div class="text-muted small">Por: @(v.CreateUsuario ?? "—")</div>
+                                        </td>
+                                        <td class="celda-acciones">
+                                            @if (v.Estatus)
+                                            {
+                                                <form method="post" asp-page-handler="CancelarVacaciones"
+                                                      asp-route-id="@id"
+                                                      asp-route-idVacacion="@v.Id"
+                                                      class="d-inline"
+                                                      data-confirmar="¿Está seguro de cancelar el periodo vacacional del @v.FechaInicio.ToString("dd/MM/yyyy") al @v.FechaFin.ToString("dd/MM/yyyy")?"
+                                                      data-confirmar-boton="Cancelar Periodo"
+                                                      data-confirmar-clase="btn-danger">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Inactivo</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── MODAL DE CAPTURA DE VACACIONES ──────────────────────────────────── *@
+    <div class="modal fade" id="modalVacaciones" tabindex="-1" aria-labelledby="modalVacacionesTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="GuardarVacaciones" asp-route-id="@id" novalidate id="formVacaciones">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="modalVacacionesTitulo">Registrar Periodo de Vacaciones</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="NuevaVacacion.FechaInicio">Fecha Inicio <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" asp-for="NuevaVacacion.FechaInicio" id="vacFechaInicio" required />
+                                <span class="text-danger small" asp-validation-for="NuevaVacacion.FechaInicio"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="NuevaVacacion.FechaFin">Fecha Fin <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" asp-for="NuevaVacacion.FechaFin" id="vacFechaFin" required />
+                                <span class="text-danger small" asp-validation-for="NuevaVacacion.FechaFin"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="NuevaVacacion.DiasTomados">Días Tomados <span class="text-danger">*</span></label>
+                                <input type="number" min="1" max="365" class="form-control" asp-for="NuevaVacacion.DiasTomados" id="vacDiasTomados" required />
+                                <span class="text-danger small" asp-validation-for="NuevaVacacion.DiasTomados"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="NuevaVacacion.PeriodoAnio">Periodo (Año)</label>
+                                <input type="number" min="2000" max="2100" class="form-control" asp-for="NuevaVacacion.PeriodoAnio" value="@(Model.NuevaVacacion.PeriodoAnio ?? DateTime.Now.Year)" />
+                                <span class="text-danger small" asp-validation-for="NuevaVacacion.PeriodoAnio"></span>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" asp-for="NuevaVacacion.Observaciones">Observaciones / Folio</label>
+                                <textarea class="form-control" asp-for="NuevaVacacion.Observaciones" rows="3" maxlength="250" placeholder="Ej. Folio de solicitud RH-2026-001 o notas de autorización"></textarea>
+                                <span class="text-danger small" asp-validation-for="NuevaVacacion.Observaciones"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary" data-texto-cargando="Guardando…">Guardar Periodo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            @if (esTabVacaciones && !ViewData.ModelState.IsValid)
+            {
+                <text>
+            const modalVac = document.getElementById('modalVacaciones');
+            if (modalVac && window.bootstrap) { new bootstrap.Modal(modalVac).show(); }
+                </text>
+            }
+            const fInicio = document.getElementById('vacFechaInicio');
+            const fFin = document.getElementById('vacFechaFin');
+            const dTomados = document.getElementById('vacDiasTomados');
+
+            function calcularDiasSugeridos() {
+                if (!fInicio || !fFin || !dTomados) return;
+                if (!fInicio.value || !fFin.value) return;
+
+                const d1 = new Date(fInicio.value + 'T00:00:00');
+                const d2 = new Date(fFin.value + 'T00:00:00');
+                if (d2 >= d1) {
+                    const diffTime = Math.abs(d2 - d1);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    if (!dTomados.value || dTomados.dataset.autoCalculado === 'true') {
+                        dTomados.value = diffDays;
+                        dTomados.dataset.autoCalculado = 'true';
+                    }
+                }
+            }
+
+            if (fInicio && fFin) {
+                fInicio.addEventListener('change', function () {
+                    if (fFin.value && fFin.value < fInicio.value) {
+                        fFin.value = fInicio.value;
+                    }
+                    calcularDiasSugeridos();
+                });
+                fFin.addEventListener('change', function () {
+                    calcularDiasSugeridos();
+                });
+            }
+
+            if (dTomados) {
+                dTomados.addEventListener('input', function () {
+                    dTomados.dataset.autoCalculado = 'false';
+                });
+            }
+        });
+    </script>
+}

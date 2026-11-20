@@ -1,0 +1,148 @@
+:root {
+    --chk-primario: #1f4e79;
+    --chk-primario-oscuro: #163a5b;
+    --chk-fondo: #f4f6f9;
+    --chk-borde: #dde3ea;
+    --chk-texto-suave: #5b6675;
+}
+
+html { font-size: 15px; }
+@media (min-width: 768px) { html { font-size: 16px; } }
+
+body {
+    background: var(--chk-fondo);
+    color: #1d2530;
+    min-height: 100vh;
+}
+
+.skip-link {
+    position: absolute;
+    left: .5rem;
+    top: .5rem;
+    z-index: 2000;
+    background: #fff;
+    padding: .5rem 1rem;
+    border-radius: .25rem;
+}
+
+.topbar { background: var(--chk-primario); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.topbar .navbar-brand { font-size: 1.05rem; }
+
+.sidebar {
+    background: #fff;
+    border-right: 1px solid var(--chk-borde);
+}
+@media (min-width: 768px) {
+    .sidebar {
+        position: sticky;
+        top: 56px;
+        height: calc(100vh - 56px);
+        overflow-y: auto;
+    }
+}
+.sidebar .nav-link {
+    color: #2b3644;
+    border-radius: .375rem;
+    margin: 0 .5rem .125rem;
+    padding: .55rem .75rem;
+}
+.sidebar .nav-link:hover { background: #eef2f7; }
+.sidebar .nav-link.active {
+    background: var(--chk-primario);
+    color: #fff;
+}
+
+a:focus-visible, button:focus-visible, .nav-link:focus-visible, .form-control:focus, .form-select:focus {
+    outline: 3px solid #f0b429;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.btn-primary { background: var(--chk-primario); border-color: var(--chk-primario); }
+.btn-primary:hover, .btn-primary:focus { background: var(--chk-primario-oscuro); border-color: var(--chk-primario-oscuro); }
+
+.encabezado-pagina {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.encabezado-pagina h1 { font-size: 1.5rem; margin: 0; }
+.encabezado-pagina .subtitulo { color: var(--chk-texto-suave); font-size: .9rem; margin: 0; }
+
+.tarjeta {
+    background: #fff;
+    border: 1px solid var(--chk-borde);
+    border-radius: .5rem;
+    padding: 1rem 1.25rem;
+}
+.tarjeta + .tarjeta { margin-top: 1rem; }
+
+.kpi { height: 100%; }
+.kpi .kpi-titulo { color: var(--chk-texto-suave); font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; }
+.kpi .kpi-valor { font-size: 2rem; font-weight: 600; line-height: 1.1; }
+.kpi .kpi-detalle { font-size: .85rem; color: var(--chk-texto-suave); }
+.kpi a { text-decoration: none; }
+
+.filtros .form-label { font-size: .8rem; color: var(--chk-texto-suave); margin-bottom: .2rem; }
+
+.table thead th {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--chk-texto-suave);
+    background: #f8fafc;
+    white-space: nowrap;
+}
+.table td { vertical-align: middle; }
+.celda-acciones { white-space: nowrap; text-align: right; }
+
+/* Tablas apilables en móvil */
+@media (max-width: 767.98px) {
+    .tabla-responsiva thead { display: none; }
+    .tabla-responsiva tr {
+        display: block;
+        border: 1px solid var(--chk-borde);
+        border-radius: .5rem;
+        margin-bottom: .75rem;
+        background: #fff;
+    }
+    .tabla-responsiva td {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        border: 0;
+        border-bottom: 1px solid #f0f2f5;
+        text-align: right;
+    }
+    .tabla-responsiva td:last-child { border-bottom: 0; }
+    .tabla-responsiva td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--chk-texto-suave);
+        text-align: left;
+    }
+    .tabla-responsiva .celda-acciones { justify-content: flex-end; }
+    .tabla-responsiva .celda-acciones::before { content: none; }
+}
+
+.estado-vacio-icono { font-size: 2.5rem; line-height: 1; margin-bottom: .5rem; color: #b5bfcc; }
+
+.badge-estado { font-weight: 500; }
+
+.form-text-ayuda { font-size: .85rem; color: var(--chk-texto-suave); }
+
+.login-caja { max-width: 420px; margin: 0 auto; }
+.login-caja .marca { color: var(--chk-primario); font-weight: 700; }
+
+.cargando { pointer-events: none; opacity: .75; }
+
+.foto-marcaje { max-width: 100%; height: auto; border-radius: .375rem; }
+
+.actualizacion { font-size: .85rem; color: var(--chk-texto-suave); }
+
+.validation-summary-valid { display: none; }
+.validation-summary-errors ul { margin-bottom: 0; padding-left: 1.1rem; }
+

@@ -1,0 +1,128 @@
+@inject IPermisoResolver Resolver
+@{
+    var autenticado = User.Identity?.IsAuthenticated == true;
+    var permisos = autenticado && User.TryGetPerfil(out var perfil) ? Resolver.ObtenerPermisos(perfil) : new
+HashSet<string>();
+    var actual = ViewContext.RouteData.Values["page"]?.ToString() ?? string.Empty;
+    string Activo(string prefijo) => actual.StartsWith(prefijo, StringComparison.OrdinalIgnoreCase) ? "active" :
+string.Empty;
+    string? Aria(string prefijo) => actual.StartsWith(prefijo, StringComparison.OrdinalIgnoreCase) ? "page" : null;
+    var titulo = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="es-MX">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(string.IsNullOrEmpty(titulo) ? "Checador" : $"{titulo} · Checador")</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body>
+    <a class="visually-hidden-focusable skip-link" href="#contenido">Saltar al contenido</a>
+    @if (autenticado)
+    {
+        <header class="topbar navbar navbar-dark sticky-top px-3">
+            <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#menuLateral"
+                    aria-controls="menuLateral" aria-expanded="false" aria-label="Mostrar menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand fw-semibold" asp-page="/Index">Checador <span
+                class="text-white-50 fw-normal">Administración</span></a>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <a class="text-white text-decoration-none small d-none d-sm-inline" asp-page="/Account/MiCuenta"
+                       title="Mi cuenta">@User.Identity!.Name</a>
+                    <form method="post" asp-page="/Account/Logout" class="m-0">
+                        <button type="submit" class="btn btn-sm btn-outline-light">Salir</button>
+                    </form>
+                </div>
+            </header>
+            <div class="container-fluid">
+                <div class="row">
+                    <nav id="menuLateral" class="col-md-3 col-lg-2 sidebar collapse d-md-block" aria-label="Menú principal">
+                        <ul class="nav flex-column py-3">
+                            @if (permisos.Contains(Permisos.PanelVer))
+                            {
+                                <li class="nav-item"><a class="nav-link @(actual == "/Index" ? "active" : "")"
+                                                            aria-current="@(actual == "/Index" ? "page" : null)" asp-page="/Index">Panel</a></li>
+                                }
+                                @if (permisos.Contains(Permisos.EmpleadosVer))
+                                {
+                                    <li class="nav-item"><a class="nav-link @Activo("/Empleados")" aria-current="@Aria("/Empleados")"
+                                                                asp-page="/Empleados/Index">Empleados</a></li>
+                                    }
+                                    @if (permisos.Contains(Permisos.HorariosVer))
+                                    {
+                                        <li class="nav-item"><a class="nav-link @Activo("/Horarios")" aria-current="@Aria("/Horarios")"
+                                                                    asp-page="/Horarios/Index">Horarios y Vacaciones</a></li>
+                                        }
+                                        @if (permisos.Contains(Permisos.EquiposVer))
+                                        {
+                                            <li class="nav-item"><a class="nav-link @Activo("/Equipos")" aria-current="@Aria("/Equipos")"
+                                                                        asp-page="/Equipos/Index">Equipos vinculados</a></li>
+                                            }
+                                            @if (permisos.Contains(Permisos.EstacionesVer))
+                                            {
+                                                <li class="nav-item"><a class="nav-link @Activo("/Estaciones")" aria-current="@Aria("/Estaciones")"
+                                                                            asp-page="/Estaciones/Index">Estaciones</a></li>
+                                                }
+                                                @if (permisos.Contains(Permisos.MarcajesVer))
+                                                {
+                                                    <li class="nav-item"><a class="nav-link @Activo("/Marcajes")" aria-current="@Aria("/Marcajes")"
+                                                                                asp-page="/Marcajes/Index">Marcajes</a></li>
+                                                        <li class="nav-item"><a class="nav-link ps-4 @Activo("/ResumenH")" aria-current="@Aria("/ResumenH")"
+                                                                                    asp-page="/ResumenH/ResumenHoras">Resumen de Horas</a></li>
+                                                        }
+                                                        @if (permisos.Contains(Permisos.UsuariosVer))
+                                                        {
+                                                            <li class="nav-item"><a class="nav-link @Activo("/Usuarios")" aria-current="@Aria("/Usuarios")"
+                                                                                        asp-page="/Usuarios/Index">Usuarios del sistema</a></li>
+                                                            }
+                                                            @if (permisos.Contains(Permisos.DiasFestivosVer))
+                                                            {
+                                                                <li class="nav-item"><a class="nav-link @Activo("/DiasFestivos")"
+                                                                                            aria-current="@Aria("/DiasFestivos")" asp-page="/DiasFestivos/Index">Días festivos</a></li>
+                                                                }
+                                                                <li class="nav-item mt-3 border-top pt-2"><a class="nav-link @Activo("/Account/MiCuenta")"
+                                                                                                                 asp-page="/Account/MiCuenta">Mi cuenta</a></li>
+                                                                </ul>
+                                                            </nav>
+                                                            <main id="contenido" class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4" tabindex="-1">
+                                                                @RenderBody()
+                                                            </main>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <main id="contenido" class="container py-5" tabindex="-1">
+                                                        @RenderBody()
+                                                    </main>
+                                                }
+
+                                                <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacionTitulo"
+                                                     aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h2 class="modal-title fs-5" id="modalConfirmacionTitulo">Confirmar acción</h2>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                            </div>
+                                                            <div class="modal-body" id="modalConfirmacionTexto"></div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                                <button type="button" class="btn btn-primary" id="modalConfirmacionAceptar">Confirmar</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <script src="~/lib/jquery/dist/jquery.min.js"></script>
+                                                <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+                                                <script src="~/js/site.js" asp-append-version="true"></script>
+                                                @await RenderSectionAsync("Scripts", required: false)
+                                            </body>
+
+                                        </html>

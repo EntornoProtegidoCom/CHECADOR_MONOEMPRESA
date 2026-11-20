@@ -1,0 +1,30 @@
+@model EmpleadoDatosBase
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" maxlength="20" autocomplete="off" />
+        <span asp-validation-for="Nombre" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ApellidoP" class="form-label"></label>
+        <input asp-for="ApellidoP" class="form-control" maxlength="20" autocomplete="off" />
+        <span asp-validation-for="ApellidoP" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ApellidoM" class="form-label"></label>
+        <input asp-for="ApellidoM" class="form-control" maxlength="20" autocomplete="off" />
+        <span asp-validation-for="ApellidoM" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="Correo" class="form-label"></label>
+        <input asp-for="Correo" class="form-control" maxlength="100" autocomplete="off" aria-describedby="ayudaCorreo" />
+        <div id="ayudaCorreo" class="form-text">Se usa para enviar el comprobante de cada marcaje.</div>
+        <span asp-validation-for="Correo" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="Activo" class="form-check-input" role="switch" />
+            <label asp-for="Activo" class="form-check-label"></label>
+        </div>
+    </div>
+</div>

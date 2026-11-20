@@ -1,0 +1,59 @@
+@page
+@model ChecadorWeb.Pages.Empleados.CrearModel
+@{
+    ViewData["Title"] = "Nuevo empleado";
+    ViewData["PermiteCruceMedianoche"] = Model.PermiteCruceMedianoche;
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Nuevo empleado</h1>
+        <p class="subtitulo">Ingresa el ID de trabajador asignado por el sistema externo.</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="./Index">Volver</a>
+</div>
+
+<form method="post" novalidate data-texto-cargando="Guardando…">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <section class="tarjeta" aria-labelledby="secDatos">
+        <h2 class="h6 text-muted text-uppercase mb-3" id="secDatos">Datos generales</h2>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label asp-for="Datos.IDTrabajador" class="form-label"></label>
+                <input asp-for="Datos.IDTrabajador" class="form-control" type="number" min="1" step="1" />
+                <span asp-validation-for="Datos.IDTrabajador" class="text-danger small"></span>
+            </div>
+        </div>
+        <partial name="_CamposEmpleado" for="Datos" />
+    </section>
+
+    <section class="tarjeta" aria-labelledby="secPin">
+        <h2 class="h6 text-muted text-uppercase mb-3" id="secPin">PIN de marcaje</h2>
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <label asp-for="Datos.Pin" class="form-label"></label>
+                <input asp-for="Datos.Pin" class="form-control" inputmode="numeric" maxlength="4" autocomplete="new-password" />
+                <span asp-validation-for="Datos.Pin" class="text-danger small"></span>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="Datos.ConfirmarPin" class="form-label"></label>
+                <input asp-for="Datos.ConfirmarPin" class="form-control" inputmode="numeric" maxlength="4" autocomplete="new-password" />
+                <span asp-validation-for="Datos.ConfirmarPin" class="text-danger small"></span>
+            </div>
+        </div>
+        <p class="form-text mt-2 mb-0">4 dígitos. El PIN no se vuelve a mostrar después de guardarlo.</p>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="secHorario">
+        <h2 class="h6 text-muted text-uppercase mb-3" id="secHorario">Horario (opcional)</h2>
+        <partial name="_CamposHorario" for="Datos.Horario" />
+    </section>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Guardar empleado</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">Cancelar</a>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

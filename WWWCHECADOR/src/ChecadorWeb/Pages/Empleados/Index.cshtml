@@ -1,0 +1,116 @@
+@page
+@model ChecadorWeb.Pages.Empleados.IndexModel
+@{
+    ViewData["Title"] = "Empleados";
+    var puedeEditar = Model.Puede(Permisos.EmpleadosEditar);
+    var volver = Request.QueryString.Value;
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Empleados</h1>
+        <p class="subtitulo">Catálogo MM_TRABAJADORES</p>
+    </div>
+    @if (puedeEditar)
+    {
+        <a class="btn btn-primary" asp-page="./Crear">Nuevo empleado</a>
+    }
+</div>
+
+<partial name="_Mensaje" model="Model.Mensaje" />
+
+<form method="get" class="tarjeta filtros mb-3" role="search" aria-label="Filtrar empleados">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label" for="Texto">Buscar</label>
+            <input class="form-control" id="Texto" name="Texto" value="@Model.Filtro.Texto" placeholder="ID, nombre, apellido o correo" maxlength="100" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="Estado">Estado</label>
+            <select class="form-select" id="Estado" name="Estado" data-autoenviar>
+                <option value="activos" selected="@(Model.Filtro.Estado == "activos")">Activos</option>
+                <option value="inactivos" selected="@(Model.Filtro.Estado == "inactivos")">Inactivos</option>
+                <option value="todos" selected="@(Model.Filtro.Estado == "todos")">Todos</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary flex-fill" data-texto-cargando="Buscando…">Buscar</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index" title="Limpiar filtros">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else if (Model.Resultado is { } r)
+{
+    <div class="tarjeta p-0 p-md-2">
+        @if (r.Total == 0)
+        {
+            <partial name="_EstadoVacio" model="@("No hay empleados que coincidan con los filtros.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Lista de empleados</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Correo</th>
+                            <th scope="col">Horario</th>
+                            <th scope="col">Equipos</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in r.Elementos)
+                        {
+                            <tr>
+                                <td data-label="ID">@e.Id</td>
+                                <td data-label="Nombre">@e.NombreCompleto</td>
+                                <td data-label="Correo">@(e.Correo ?? "—")</td>
+                                <td data-label="Horario">
+                                    @if (e.HoraEntrada is null || e.HoraSalida is null) { <span class="text-warning">Sin horario</span> }
+                                    else { <text>@e.HoraEntrada.Value.ToString("HH:mm")–@e.HoraSalida.Value.ToString("HH:mm")</text> }
+                                </td>
+                                <td data-label="Equipos">@e.VinculosActivos</td>
+                                <td data-label="Estado">
+                                    @if (e.Activo == true) { <span class="badge bg-success badge-estado">Activo</span> }
+                                    else { <span class="badge bg-secondary badge-estado">Inactivo</span> }
+                                </td>
+                                <td class="celda-acciones">
+                                    @if (puedeEditar)
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary" asp-page="./Editar" asp-route-id="@e.Id">Editar</a>
+                                        @if (e.Activo == true)
+                                        {
+                                            <form method="post" asp-page-handler="Estado" asp-route-id="@e.Id" asp-route-activar="false" class="d-inline"
+                                                  data-confirmar="¿Desactivar a @e.NombreCompleto? No podrá registrar asistencia mientras esté inactivo."
+                                                  data-confirmar-boton="Desactivar" data-confirmar-clase="btn-danger">
+                                                <input type="hidden" name="volver" value="@volver" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-page-handler="Estado" asp-route-id="@e.Id" asp-route-activar="true" class="d-inline"
+                                                  data-confirmar="¿Activar a @e.NombreCompleto?" data-confirmar-boton="Activar">
+                                                <input type="hidden" name="volver" value="@volver" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                            </form>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <partial name="_Paginador" model="Model.Paginador" />
+}

@@ -1,0 +1,110 @@
+@page
+@model ChecadorWeb.Pages.Estaciones.IndexModel
+@{
+    ViewData["Title"] = "Estaciones";
+    var estados = new[] { EstadoComunicacion.EnLinea, EstadoComunicacion.Aviso, EstadoComunicacion.SinComunicacion, EstadoComunicacion.NuncaReporto, EstadoComunicacion.HoraInconsistente };
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Estado de estaciones</h1>
+        <p class="subtitulo">Comunicación según el último heartbeat (DD_EQUIPO_HEARTBEAT) y estado que informa cada estación</p>
+    </div>
+</div>
+
+<form method="get" class="tarjeta filtros mb-3" aria-label="Umbrales de alerta">
+    <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="aviso">Aviso a partir de (min)</label>
+            <input class="form-control" type="number" min="1" max="1440" id="aviso" name="aviso" value="@Model.MinutosAviso" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="desconexion">Sin comunicación a partir de (min)</label>
+            <input class="form-control" type="number" min="2" max="10080" id="desconexion" name="desconexion" value="@Model.MinutosDesconexion" />
+        </div>
+        <div class="col-md-6 d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-outline-primary" data-texto-cargando="Aplicando…">Aplicar umbrales</button>
+            <a class="btn btn-outline-secondary" asp-page="./Index">Predeterminados (@Model.Predeterminados.MinutosAviso / @Model.Predeterminados.MinutosDesconexion min)</a>
+        </div>
+    </div>
+    <p class="form-text mb-0 mt-2">Los umbrales aplican solo a esta consulta; los predeterminados se configuran en <code>Heartbeat</code> de appsettings.</p>
+</form>
+
+@if (Model.ErrorCarga is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @Model.ErrorCarga No se muestra el estado de las estaciones para no reportarlas como desconectadas por un fallo de consulta.
+        <a class="alert-link" href="@Request.Path@Request.QueryString">Reintentar</a>
+    </div>
+}
+else if (Model.Resultado is { } r)
+{
+    <div id="estaciones" data-url="@Url.Page("./Index", "Datos", new { aviso = Model.MinutosAviso, desconexion = Model.MinutosDesconexion })"
+         data-intervalo="@(Model.SegundosActualizacion * 1000)">
+        <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+            <p class="actualizacion mb-0" aria-live="polite">
+                Actualizado: <span id="estacionesActualizado">@r.AhoraServidor.ToString("dd/MM/yyyy HH:mm:ss")</span> (hora del servidor de BD) ·
+                actualización automática cada @Model.SegundosActualizacion s
+            </p>
+            <span id="estacionesCargando" class="small text-muted d-none" role="status">Actualizando…</span>
+        </div>
+        <div id="estacionesError" class="alert alert-warning d-none" role="alert"></div>
+
+        <div class="row g-2 mb-3" id="estacionesResumen">
+            @foreach (var e in estados)
+            {
+                <div class="col-6 col-md">
+                    <div class="tarjeta kpi text-center py-2">
+                        <div class="kpi-valor fs-3" data-resumen="@e">@r.Contar(e)</div>
+                        <div class="kpi-detalle"><span class="badge bg-@HeartbeatClasificador.ClaseCss(e) badge-estado">@HeartbeatClasificador.Etiqueta(e)</span></div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="tarjeta p-0 p-md-2">
+            <div id="estacionesVacio" class="@(r.Filas.Count == 0 ? "" : "d-none")">
+                <partial name="_EstadoVacio" model="@("No hay estaciones con heartbeat ni equipos vinculados.")" />
+            </div>
+            <div class="table-responsive @(r.Filas.Count == 0 ? "d-none" : "")" id="estacionesTablaContenedor">
+                <table class="table table-hover mb-0 tabla-responsiva">
+                    <caption class="visually-hidden">Estado de estaciones</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Equipo</th>
+                            <th scope="col">Comunicación</th>
+                            <th scope="col">Último heartbeat</th>
+                            <th scope="col">Estado informado</th>
+                            <th scope="col">Empleado</th>
+                            <th scope="col">IP / versión</th>
+                            <th scope="col">Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="estacionesCuerpo">
+                        @foreach (var f in r.Filas)
+                        {
+                            <tr>
+                                <td data-label="Equipo"><strong>@f.NbEquipo</strong></td>
+                                <td data-label="Comunicación"><span class="badge bg-@HeartbeatClasificador.ClaseCss(f.Estado) badge-estado">@HeartbeatClasificador.Etiqueta(f.Estado)</span></td>
+                                <td data-label="Último heartbeat">
+                                    @if (f.UltimoHeartbeat is { } u) { <text>@u.ToString("dd/MM/yyyy HH:mm:ss") <span class="text-muted small">(hace @f.MinutosSinHeartbeat min)</span></text> }
+                                    else { <text>—</text> }
+                                </td>
+                                <td data-label="Estado informado">@(f.EstadoInformado ?? "—")</td>
+                                <td data-label="Empleado">@(f.IdTrabajadorReportado ?? f.IdTrabajadorVinculado) @f.NombreTrabajador</td>
+                                <td data-label="IP / versión" class="small">@(f.Ip ?? "—") / @(f.VersionApp ?? "—")</td>
+                                <td data-label="Observación" class="small">@(f.Observacion ?? "")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="form-text mt-2">
+            «Estado informado» es el último valor que envió la estación; si deja de comunicarse ese valor no cambia,
+            por eso la columna «Comunicación» se calcula con la antigüedad del último heartbeat.
+        </p>
+    </div>
+}
+@section Scripts {
+    <script src="~/js/estaciones.js" asp-append-version="true"></script>
+}

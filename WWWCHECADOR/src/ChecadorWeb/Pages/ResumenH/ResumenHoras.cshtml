@@ -1,0 +1,130 @@
+@page
+@model ChecadorWeb.Pages.ResumenH.ResumenHorasModel
+@{
+    ViewData["Title"] = "Resumen de Horas";
+    var cultura = System.Globalization.CultureInfo.GetCultureInfo("es-MX");
+}
+<div class="encabezado-pagina">
+    <div>
+        <h1>Resumen de Horas</h1>
+        <p class="subtitulo">Horas efectivas por empleado activo · lunes a viernes · solo lectura</p>
+    </div>
+    @if (Model.Resultado is not null)
+    {
+        <a class="btn btn-outline-primary" asp-page-handler="Excel"
+           asp-route-Desde="@Model.Filtro.Desde?.ToString("yyyy-MM-dd")"
+           asp-route-Hasta="@Model.Filtro.Hasta?.ToString("yyyy-MM-dd")"
+           asp-route-Trabajador="@Model.Filtro.Trabajador">Descargar Excel</a>
+    }
+</div>
+<form method="get" class="tarjeta filtros mb-3" role="search" aria-label="Filtrar resumen de horas">
+    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+    <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="Desde">Desde</label>
+            <input class="form-control" type="date" id="Desde" name="Desde" min="1753-01-01" required value="@Model.Filtro.Desde?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="Hasta">Hasta</label>
+            <input class="form-control" type="date" id="Hasta" name="Hasta" min="1753-01-01" required value="@Model.Filtro.Hasta?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="Trabajador">Empleado / ID</label>
+            <input class="form-control" id="Trabajador" name="Trabajador" value="@Model.Filtro.Trabajador" placeholder="ID o nombre" maxlength="100" />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary" data-texto-cargando="Consultando…">Consultar</button>
+            <a class="btn btn-outline-secondary" asp-page="./ResumenHoras">Limpiar</a>
+        </div>
+    </div>
+    <p class="form-text mb-0 mt-2">Por defecto: semana actual (lunes a viernes). Máximo @ResumenHorasFiltro.DiasMaximos días calendario.
+        Solo se muestran y suman los días de lunes a viernes del rango seleccionado.</p>
+</form>
+<div class="alert alert-info">
+    Las jornadas completas suman entrada a salida, descontando la comida cuando existen los cuatro marcajes.
+    Sábados y domingos se excluyen del reporte, de los totales y de las omisiones, aunque tengan marcajes.
+    INCOMPLETO no suma horas. FALTA indica un día de lunes a viernes sin marcajes y cuenta como omisión,
+    incluso en fechas futuras, festivos u otros descansos; no se aplica un calendario de excepciones.
+    Verde: 8 horas o más; amarillo: menos de 8 horas; rojo: omisiones.
+    Las duraciones se muestran en horas:minutos:segundos, redondeadas al segundo.
+    Los totales se calculan antes de redondear; los que tienen omisiones son parciales.
+</div>
+@if (Model.ErrorCarga is not null)
+{
+    <partial name="_ErrorCarga" model="Model.ErrorCarga" />
+}
+else if (Model.Resultado is { } reporte)
+{
+    var fechas = reporte.Fechas;
+    var semanas = reporte.Semanas.Count > 1 ? reporte.Semanas : Array.Empty<DateTime>();
+    var subtotalesSemana = reporte.Empleados.SelectMany(e => e.TotalesPorSemana)
+        .GroupBy(s => s.Key).ToDictionary(g => g.Key, g => g.Sum(s => s.Value));
+    <div class="tarjeta p-0 p-md-2">
+        @if (reporte.Empleados.Count == 0)
+        {
+            <partial name="_EstadoVacio" model="@("No hay empleados activos que coincidan con los filtros.")" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0">
+                    <caption>Horas:minutos:segundos · @reporte.Desde.ToString("dd/MM/yyyy") a @reporte.Hasta.ToString("dd/MM/yyyy")</caption>
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">ID Empleado</th>
+                            <th scope="col">Nombre del Colaborador</th>
+                            @foreach (var fecha in fechas)
+                            {
+                                <th scope="col">@fecha.ToString("ddd dd/MM/yyyy", cultura)</th>
+                            }
+                            @foreach (var semana in semanas)
+                            {
+                                <th scope="col">Semana @semana.ToString("dd/MM/yyyy") (hrs)</th>
+                            }
+                            <th scope="col">@(semanas.Count == 0 ? "Total semanal (hrs)" : "Total del periodo (hrs)")</th>
+                            <th scope="col">Estatus del Periodo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var empleado in reporte.Empleados)
+                        {
+                            var totalesSemana = empleado.TotalesPorSemana;
+                            <tr>
+                                <td>@empleado.IdTrabajador</td>
+                                <th scope="row">@empleado.NombreTrabajador</th>
+                                @foreach (var fecha in fechas)
+                                {
+                                    var detalle = empleado.Dias[fecha];
+                                    <td class="@(detalle.EsIncompleto ? "table-danger" : detalle.HorasEfectivas >= 8 ? "table-success" : "table-warning")">
+                                        @(detalle.EsIncompleto ? detalle.Estatus : FormatoDuracion.Texto(detalle.HorasEfectivas))
+                                    </td>
+                                }
+                                @foreach (var semana in semanas)
+                                {
+                                    <td>@FormatoDuracion.Texto(totalesSemana[semana])</td>
+                                }
+                                <td class="fw-bold">@FormatoDuracion.Texto(empleado.TotalHorasSemanales)</td>
+                                <td>@(empleado.TieneOmisiones ? "Omisiones pendientes" : "OK")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-secondary fw-bold">
+                        <tr>
+                            <th colspan="2" scope="row">TOTALES</th>
+                            @foreach (var fecha in fechas)
+                            {
+                                <td>@FormatoDuracion.Texto(reporte.Empleados.Where(e => !e.Dias[fecha].EsIncompleto).Sum(e => e.Dias[fecha].HorasEfectivas))</td>
+                            }
+                            @foreach (var semana in semanas)
+                            {
+                                <td>@FormatoDuracion.Texto(subtotalesSemana[semana])</td>
+                            }
+                            <td>@FormatoDuracion.Texto(reporte.Empleados.Sum(e => e.TotalHorasSemanales))</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+    </div>
+}

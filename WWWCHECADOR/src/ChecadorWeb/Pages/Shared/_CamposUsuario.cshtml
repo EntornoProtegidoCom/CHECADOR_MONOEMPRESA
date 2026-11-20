@@ -1,0 +1,47 @@
+@model UsuarioDatosBase
+@{
+    var perfiles = ViewData["Perfiles"] as IReadOnlyList<PerfilItem> ?? [];
+    var bloquearPerfil = ViewData["BloquearPerfil"] as bool? == true;
+}
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" maxlength="100" autocomplete="off" />
+        <span asp-validation-for="Nombre" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Paterno" class="form-label"></label>
+        <input asp-for="Paterno" class="form-control" maxlength="100" autocomplete="off" />
+        <span asp-validation-for="Paterno" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Materno" class="form-label"></label>
+        <input asp-for="Materno" class="form-control" maxlength="100" autocomplete="off" />
+        <span asp-validation-for="Materno" class="text-danger small"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" maxlength="100" autocomplete="off" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="IdPerfil" class="form-label"></label>
+        @if (bloquearPerfil)
+        {
+            <input type="hidden" asp-for="IdPerfil" />
+            <input class="form-control" disabled value="@(perfiles.FirstOrDefault(p => p.Id == Model.IdPerfil)?.Nombre ?? $"Perfil {Model.IdPerfil}")" aria-describedby="ayudaPerfil" />
+            <div id="ayudaPerfil" class="form-text">No puede cambiar su propio perfil.</div>
+        }
+        else
+        {
+            <select asp-for="IdPerfil" class="form-select">
+                <option value="">Seleccione…</option>
+                @foreach (var p in perfiles)
+                {
+                    <option value="@p.Id" selected="@(Model.IdPerfil == p.Id)">@p.Nombre</option>
+                }
+            </select>
+        }
+        <span asp-validation-for="IdPerfil" class="text-danger small"></span>
+    </div>
+</div>

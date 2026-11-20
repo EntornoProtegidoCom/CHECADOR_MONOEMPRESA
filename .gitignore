@@ -1,0 +1,39 @@
+# .NET and IDE generated files
+[Bb]in/
+[Oo]bj/
+.vs/
+TestResults/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.cache
+*.log
+*.tmp
+*.temp
+*.nupkg
+
+# Published applications, installer output, and local data
+[Pp]ublish/
+CLIENTCHECADO/installer/Output/
+WWWCHECADOR/src/ChecadorWeb/App_Data/
+ChecadorLocal.db*
+*.sqlite
+*.sqlite3
+
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.pfx
+*.p12
+*.key
+/APICHECADO/ChecadorAPI/appsettings.json
+/CLIENTCHECADO/ChecadorDesktop/appsettings.json
+
+# Files requiring review before they can be shared
+/APICHECADO/ChecadorAPI/README.MD
+/APICHECADO/ChecadorAPI/WorkerSchedule.http
+/DB_CHECADOR_ENT/DB_CHECADOR_ENT.zip

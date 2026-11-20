@@ -1,0 +1,32 @@
+@model HorarioEdicion
+@{
+    var permiteCruce = ViewData["PermiteCruceMedianoche"] as bool? == true;
+}
+<div class="row g-3">
+    <div class="col-6 col-md-3">
+        <label asp-for="Entrada" class="form-label"></label>
+        <input asp-for="Entrada" type="time" step="60" asp-format="{0:HH:mm}" class="form-control" />
+        <span asp-validation-for="Entrada" class="text-danger small"></span>
+    </div>
+    <div class="col-6 col-md-3">
+        <label asp-for="SalidaComida" class="form-label"></label>
+        <input asp-for="SalidaComida" type="time" step="60" asp-format="{0:HH:mm}" class="form-control" />
+        <span asp-validation-for="SalidaComida" class="text-danger small"></span>
+    </div>
+    <div class="col-6 col-md-3">
+        <label asp-for="EntradaComida" class="form-label"></label>
+        <input asp-for="EntradaComida" type="time" step="60" asp-format="{0:HH:mm}" class="form-control" />
+        <span asp-validation-for="EntradaComida" class="text-danger small"></span>
+    </div>
+    <div class="col-6 col-md-3">
+        <label asp-for="Salida" class="form-label"></label>
+        <input asp-for="Salida" type="time" step="60" asp-format="{0:HH:mm}" class="form-control" />
+        <span asp-validation-for="Salida" class="text-danger small"></span>
+    </div>
+</div>
+<p class="form-text mt-2 mb-0">
+    Las horas deben ir en orden: entrada, salida a comer, entrada de comer y salida, con al menos 5 minutos entre cada una.
+    La comida es opcional (capture ambas horas o ninguna).
+    @if (permiteCruce) { <text>Se permiten jornadas que cruzan medianoche.</text> }
+    else { <text>No se permiten jornadas que crucen medianoche.</text> }
+</p>
